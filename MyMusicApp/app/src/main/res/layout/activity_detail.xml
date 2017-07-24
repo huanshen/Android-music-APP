@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_detail"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="12dp"
+    android:paddingLeft="12dp"
+    android:paddingRight="12dp"
+    android:paddingTop="12dp"
+    android:orientation="vertical"
+    tools:context="com.example.mymusicapp.DetailActivity">
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:text="11111"
+        android:textSize="20sp"
+        android:gravity="top|center_horizontal"
+        android:layout_gravity="top"
+        android:id="@+id/tv_title">
+    </TextView>
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:text="2222"
+        android:gravity="center"
+        android:id="@+id/tv_artist">
+    </TextView>
+    <ImageView
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_gravity="center"
+        android:id="@+id/iv_image"
+        android:layout_margin="10dp"
+        android:background="@color/colorAccent">
+    </ImageView>
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal"
+        android:layout_gravity="bottom"
+        android:layout_margin="8dp"
+        android:gravity="center">
+        <TextView
+            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:text="00:00"
+            android:gravity="center"
+            android:id="@+id/tv_currPosition"/>
+        <SeekBar
+            android:layout_width="240dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/tv_currPosition"
+            android:id="@+id/seekBar" />
+        <TextView
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:text="00:00"
+            android:gravity="center"
+            android:layout_toRightOf="@+id/seekBar"
+            android:id="@+id/tv_duration">
+        </TextView>
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="bottom|center_horizontal"
+        android:layout_gravity="bottom|center_horizontal">
+
+        <ImageButton
+            android:id="@+id/mode"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/seq"
+            android:layout_weight="1"
+            android:layout_gravity="bottom"
+            android:background="@android:color/transparent"
+            />
+
+        <ImageButton
+            android:id="@+id/pre"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:src="@drawable/pre"
+            android:background="@android:color/transparent"/>
+        <ImageButton
+            android:id="@+id/pause"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:src="@drawable/pause"
+            android:background="@android:color/transparent"/>
+        <ImageButton
+            android:id="@+id/next"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:src="@drawable/next"
+            android:background="@android:color/transparent"/>
+    </LinearLayout>
+
+</LinearLayout>
