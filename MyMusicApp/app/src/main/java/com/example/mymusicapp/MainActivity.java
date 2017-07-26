@@ -55,12 +55,12 @@ public class MainActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer = new MediaPlayer();
 
     // 表示当前播放的音乐索引, 播放位置
-    private int currIndex = 0, duration, currposition, modeIndex = 1, preIndex, nextIndex;
+    private int currIndex = 0, duration, currPosition, modeIndex = 1, preIndex, nextIndex;
 
     MyPlayingReceiver activityReceiver;
-    MyUpdateReceiver myUpdateReceiver;
 
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
+    Musiclist.MusicInfo musicInfo;
 
 
     @Override
@@ -74,26 +74,17 @@ public class MainActivity extends AppCompatActivity {
         setListener();
 
         activityReceiver = new MyPlayingReceiver();
-
-        // 用于当歌曲完成的时候，更新标题
-        // 创建IntentFilter
         IntentFilter filter = new IntentFilter();
-        // 指定BroadcastReceiver监听的Action
         filter.addAction(PLAYING_ACTION);
-        // 注册BroadcastReceiver
+        filter.addAction(UPDATE_ACTION);
+        filter.addAction(PROGRESS_ACTION);
         registerReceiver(activityReceiver, filter);
-
-        // 用于更新操作，当在详情页操作时候，同时更新本地页面
-        myUpdateReceiver = new MyUpdateReceiver();
-        IntentFilter filter1 = new IntentFilter();
-        filter1.addAction(UPDATE_ACTION);
-        registerReceiver(myUpdateReceiver, filter);
-
 
         //设置ListView的数据适配器
         mListView.setAdapter(new MyAdapter(this,itemBeanList));
 
         Intent intentService = new Intent(this, MyService.class);
+
         // 启动后台Service
         startService(intentService);
     }
@@ -120,7 +111,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case 0:
                 finish();
-                //Intent intent1 = new Intent(this, MyService.class);
                 stopService(intentService);
                 break;
         }
@@ -132,7 +122,6 @@ public class MainActivity extends AppCompatActivity {
      * 初始化界面
      */
     private void initView() {
-
         start = (ImageButton) findViewById(R.id.start);
         tv = (TextView) findViewById(R.id.tv);
         mListView = (ListView) findViewById(R.id.lv_main);
@@ -154,22 +143,12 @@ public class MainActivity extends AppCompatActivity {
                     status = 1;
                     tv.setText(itemBeanList.get(currIndex).title);
                     start.setImageResource(R.drawable.playing);
-                    Intent intent = new Intent("com.example.mymusicapp.UPDATE_ACTION");
-                    intent.putExtra("status", status);
-                    intent.putExtra("current", currIndex);
-                    intent.putExtra("mode", modeIndex);
-                    sendBroadcast(intent);
                 }else{
                     // 按下的时候字符串是不变的
                     status = -1;
                     start.setImageResource(R.drawable.pause);
-                    Intent intent = new Intent("com.example.mymusicapp.UPDATE_ACTION");
-                    intent.putExtra("status", status);
-                    intent.putExtra("current", currIndex);
-                    intent.putExtra("mode", modeIndex);
-                    sendBroadcast(intent);
                 }
-                //Toast.makeText(MainActivity.this, status +"  setOnClickListener", Toast.LENGTH_SHORT).show();
+                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
             }
         });
 
@@ -179,17 +158,11 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 status = 1;
                 currIndex = i;
-                duration = itemBeanList.get(currIndex).duration;
-                tv.setText(itemBeanList.get(currIndex).title);
+                musicInfo = itemBeanList.get(currIndex);
+                duration = musicInfo.duration;
+                tv.setText(musicInfo.title);
                 start.setImageResource(R.drawable.playing);
-                // Toast.makeText(MainActivity.this, currIndex+"播放", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent("com.example.mymusicapp.UPDATE_ACTION");
-                intent.putExtra("current", currIndex);
-                intent.putExtra("status", status);
-                intent.putExtra("mode", modeIndex);
-                intent.putExtra("nextIndex", -1);
-                intent.putExtra("preIndex", -1);
-                sendBroadcast(intent);
+                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
             }
         });
 
@@ -204,20 +177,25 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra("nextIndex", -1);
                 intent.putExtra("preIndex", -1);
                 intent.putExtra("mode", modeIndex);
+                intent.putExtra("currPosition", currPosition);
                 startActivityForResult(intent, 1000);
 
-                Intent intent1 = new Intent("com.example.mymusicapp.UPDATE_ACTION");
-                intent1.putExtra("current", currIndex);
-                intent1.putExtra("status", status);
-                intent1.putExtra("mode", modeIndex);
-                intent1.putExtra("nextIndex", -1);
-                intent1.putExtra("preIndex", -1);
-                sendBroadcast(intent1);
-                // Toast.makeText(MainActivity.this, modeIndex +"item", Toast.LENGTH_SHORT).show();
+                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
+               // Toast.makeText(MainActivity.this, status  +"tiaozhuan", Toast.LENGTH_SHORT).show();
 
             }
 
         });
+    }
+
+    private void  sendUpdateBroadcast(int status, int currIndex, int modeIndex, int nextIndex, int preIndex){
+        Intent intent = new Intent(MainActivity.UPDATE_ACTION);
+        intent.putExtra("current", currIndex);
+        intent.putExtra("status", status);
+        intent.putExtra("mode", modeIndex);
+        intent.putExtra("nextIndex", nextIndex);
+        intent.putExtra("preIndex", preIndex);
+        sendBroadcast(intent);
     }
 
     /**
@@ -236,32 +214,37 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(final Context context, Intent intent)
         {
-            currIndex = intent.getIntExtra("current", -1);
-            status = intent.getIntExtra("status", -1);
-            tv.setText(itemBeanList.get(currIndex).title);
-            //Toast.makeText(MainActivity.this, status + "  MyPlayingReceiver", Toast.LENGTH_SHORT).show();
-            modeIndex = intent.getIntExtra("mode", modeIndex);
-        }
-    }
+            String action = intent.getAction();
+            if(MainActivity.UPDATE_ACTION.equals(action)){
+                status = intent.getIntExtra("status", -1);
+                currIndex = intent.getIntExtra("current", -1);
+                musicInfo = itemBeanList.get(currIndex);
+                tv.setText(musicInfo.title);
 
-    public class MyUpdateReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(final Context context, Intent intent)
-        {
-            status = intent.getIntExtra("status", -1);
-            currIndex = intent.getIntExtra("current", -1);
-            tv.setText(itemBeanList.get(currIndex).title);
+                status = intent.getIntExtra("status", -1);
+                // 处理中间按钮
+                if (status < 0){
+                    start.setImageResource(R.drawable.pause);
+                }else{
+                    start.setImageResource(R.drawable.playing);
+                }
 
-            status = intent.getIntExtra("status", -1);
-            // 处理中间按钮
-            if (status < 0){
-                start.setImageResource(R.drawable.pause);
-            }else{
-                start.setImageResource(R.drawable.playing);
-                //Toast.makeText(MainActivity.this, status +"   onReceive", Toast.LENGTH_SHORT).show();
+            }else if(MainActivity.PROGRESS_ACTION.equals(action)){
+                int progress = intent.getIntExtra("progress", -1);
+                if(progress > 0){
+                    currPosition = progress;
+                    // Toast.makeText(context, progress, Toast.LENGTH_SHORT).show();
+                }
+            } else{
+                currIndex = intent.getIntExtra("current", -1);
+                status = intent.getIntExtra("status", -1);
+                tv.setText(itemBeanList.get(currIndex).title);
+                modeIndex = intent.getIntExtra("mode", modeIndex);
             }
+
         }
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

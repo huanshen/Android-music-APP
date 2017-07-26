@@ -19,7 +19,7 @@ import java.util.jar.Manifest;
 public class MyService extends Service {
 
     private MediaPlayer mediaPlayer = new MediaPlayer();
-    private int currIndex, duration, status, modeIndex = 1, nextIndex = -1, preIndex = -1, pro = -1;
+    private int currIndex, duration, status , modeIndex = 1, nextIndex = -1, preIndex = -1, pro = -1;
     private String mTitle;
 
     private static final int updateProgress = 1;
@@ -32,7 +32,7 @@ public class MyService extends Service {
     private Handler handler = new Handler(){
 
         public void handleMessage(Message msg){
-            Toast.makeText(MyService.this, msg.what+"  handleMessage", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MyService.this, msg.what+"  handleMessage", Toast.LENGTH_SHORT).show();
             switch(msg.what){
                 case updateProgress:
                     if(mediaPlayer != null && (status > 0) ){
@@ -44,22 +44,9 @@ public class MyService extends Service {
                         //intent.putExtra("currPosition",currPosition);
                         sendBroadcast(intent);
                         handler.sendEmptyMessageDelayed(updateProgress, 1000);
-                        Toast.makeText(MyService.this, progress+"  jindutiao", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(MyService.this, progress+"  jindutiao", Toast.LENGTH_SHORT).show();
                     }
                     break;
-                /*case updateDuration:
-                    if(mediaPlayer != null){
-                        int duration = mediaPlayer.getDuration();
-                        Intent intent = new Intent(MainActivity.PROGRESS_ACTION);
-                        intent.putExtra("duration",duration);
-                        sendBroadcast(intent);
-                    }
-                    break;*/
-                /*case updateCurrentMusic:
-                    Intent intent = new Intent(MainActivity.PROGRESS_ACTION);
-                    intent.putExtra(ACTION_UPDATE_CURRENT_MUSIC,currentMusic);
-                    sendBroadcast(intent);
-                    break;*/
             }
         }
     };
@@ -160,10 +147,6 @@ public class MyService extends Service {
             //开始音频
             mediaPlayer.start();
             handler.sendEmptyMessage(updateProgress);
-            duration = mediaPlayer.getDuration();
-            int totalTime = Math.round( duration / 1000);
-            String str = String.format("%02d:%02d", totalTime / 60, totalTime % 60);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -178,8 +161,10 @@ public class MyService extends Service {
             // 处理中间按钮
             if (status < 0){
                 mediaPlayer.pause();
-            }else if(current == currIndex) {
+                handler.sendEmptyMessage(updateProgress);
+            }else if(current == currIndex ) {
                 mediaPlayer.start();
+                handler.sendEmptyMessage(updateProgress);
                 status = 1;
             }else {
                 currIndex = current;
@@ -198,7 +183,6 @@ public class MyService extends Service {
                 //currIndex = getRandomPosition();
                 play(itemBeanList.get(currIndex).url);
                 status = 1;
-                // Toast.makeText(context, "next", Toast.LENGTH_SHORT).show();
             }
 
             // 处理点击上一首的按钮
@@ -228,5 +212,17 @@ public class MyService extends Service {
             sendBroadcast(intent1);
 
         }
+
+        public void changeProgress(int progress){
+            if(mediaPlayer != null){
+                int currentPosition = progress * 1000;
+                if(status > 0){
+                    mediaPlayer.seekTo(currentPosition);
+                }
+            }
+        }
     }
+
+
+
 }

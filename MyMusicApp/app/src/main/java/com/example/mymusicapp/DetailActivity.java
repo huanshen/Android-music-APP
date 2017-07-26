@@ -27,7 +27,7 @@ public class DetailActivity extends AppCompatActivity {
     MyPlayingReceiver myPlayingReceiver;
     private String title;
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
-    MyProgressReceiver myProgressReceiver;
+    Musiclist.MusicInfo musicInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,21 +36,13 @@ public class DetailActivity extends AppCompatActivity {
 
         initView();
 
-
         itemBeanList = Musiclist.instance(getContentResolver()).getMusicList();
 
-
-        // 用于接受播放按钮的改变的广播
         myPlayingReceiver = new MyPlayingReceiver();
         IntentFilter filter1 = new IntentFilter();
         filter1.addAction(MainActivity.PLAYING_ACTION);
+        filter1.addAction(MainActivity.PROGRESS_ACTION);
         registerReceiver(myPlayingReceiver, filter1);
-
-        myProgressReceiver = new MyProgressReceiver();
-        IntentFilter filter2 = new IntentFilter();
-        filter2.addAction(MainActivity.PROGRESS_ACTION);
-        registerReceiver(myProgressReceiver, filter2);
-
 
         //getIntent将该项目中包含的原始intent检索出来，将检索出来的intent赋值给一个Intent类型的变量intent
         Intent intent=getIntent();
@@ -58,26 +50,26 @@ public class DetailActivity extends AppCompatActivity {
         Bundle bundle=intent.getExtras();
         //getString()返回指定key的值
         modeIndex = bundle.getInt("mode");
-        setMode(modeIndex);
-
         currIndex = bundle.getInt("current");
-        tv_title.setText(itemBeanList.get(currIndex).title);
-        tv_artist.setText(itemBeanList.get(currIndex).artist);
-        duration = itemBeanList.get(currIndex).getDuration() / 1000;
+        status = bundle.getInt("status");
+        currPosition = bundle.getInt("currPosition");
 
+        musicInfo = itemBeanList.get(currIndex);
+
+        tv_title.setText(musicInfo.title);
+        tv_artist.setText(musicInfo.artist);
+
+        duration = musicInfo.getDuration() / 1000;
         mSeekBar.setMax(duration);
         String str = String.format("%02d:%02d", duration / 60, duration % 60);
 
+        currPosition = currPosition / 1000; // Remember the current position
+        String str1 = String.format("%02d:%02d", currPosition / 60, currPosition % 60);
+
+        tv_currPosition.setText(str1);
+        mSeekBar.setProgress(currPosition);
         tv_duration.setText(str);
-
-        status = bundle.getInt("status");
-
-        // Toast.makeText(DetailActivity.this, status +"点击跳转", Toast.LENGTH_SHORT).show();
-
-        currIndex =  bundle.getInt("current");
-        duration =  itemBeanList.get(currIndex).duration;
-
-        // Toast.makeText(DetailActivity.this, duration +"duration", Toast.LENGTH_SHORT).show();
+        setMode(modeIndex);
 
         if ( status  > 0){
             pause.setImageResource(R.drawable.playing);
@@ -116,15 +108,7 @@ public class DetailActivity extends AppCompatActivity {
                     status = -1;
                     pause.setImageResource(R.drawable.pause);
                 }
-
-                // Toast.makeText(DetailActivity.this, status+"播放", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent("com.example.mymusicapp.UPDATE_ACTION");
-                intent.putExtra("status", status);
-                intent.putExtra("current", currIndex);
-                intent.putExtra("nextIndex", -1);
-                intent.putExtra("mode", modeIndex);
-                intent.putExtra("preIndex", -1);
-                sendBroadcast(intent);
+                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
             }
         });
 
@@ -139,14 +123,7 @@ public class DetailActivity extends AppCompatActivity {
                 }
 
                 setMode(modeIndex);
-
-                Intent intent = new Intent("com.example.mymusicapp.UPDATE_ACTION");
-                intent.putExtra("status", status);
-                intent.putExtra("current", currIndex);
-                intent.putExtra("mode", modeIndex);
-                intent.putExtra("nextIndex", -1);
-                intent.putExtra("preIndex", -1);
-                sendBroadcast(intent);
+                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
             }
         });
 
@@ -154,13 +131,7 @@ public class DetailActivity extends AppCompatActivity {
         next.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                Intent intent = new Intent(MainActivity.UPDATE_ACTION);
-                intent.putExtra("status", status);
-                intent.putExtra("current", currIndex);
-                intent.putExtra("nextIndex", 1);
-                intent.putExtra("preIndex", -1);
-                intent.putExtra("mode", modeIndex);
-                sendBroadcast(intent);
+                sendUpdateBroadcast(status, currIndex, modeIndex, 1, -1);
             }
         });
 
@@ -168,13 +139,7 @@ public class DetailActivity extends AppCompatActivity {
         pre.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                Intent intent = new Intent(MainActivity.UPDATE_ACTION);
-                intent.putExtra("status", status);
-                intent.putExtra("current", currIndex);
-                intent.putExtra("nextIndex", -1);
-                intent.putExtra("preIndex", 1);
-                intent.putExtra("mode", modeIndex);
-                sendBroadcast(intent);
+                sendUpdateBroadcast(status, currIndex, modeIndex, -1, 1);
             }
         });
 
@@ -187,6 +152,8 @@ public class DetailActivity extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 //description.setText("拖动停止");
+
+
             }
             /**
              * 拖动条开始拖动的时候调用
@@ -201,7 +168,8 @@ public class DetailActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
-                int pro = seekBar.getProgress();
+                int pro = progress * 1000;
+
                /* Intent intent = new Intent(MainActivity.UPDATE_ACTION);
                 intent.putExtra("status", status);
                 intent.putExtra("current", currIndex);
@@ -210,11 +178,21 @@ public class DetailActivity extends AppCompatActivity {
                 intent.putExtra("mode", modeIndex);
                 intent.putExtra("pro", pro);
                 sendBroadcast(intent);*/
-                // Toast.makeText(DetailActivity.this, pro+" proDong le", Toast.LENGTH_SHORT).show();
+               Toast.makeText(DetailActivity.this, pro+" proDong le", Toast.LENGTH_SHORT).show();
 
             }
         });
 
+    }
+
+    private void  sendUpdateBroadcast(int status, int currIndex, int modeIndex, int nextIndex, int preIndex){
+        Intent intent = new Intent(MainActivity.UPDATE_ACTION);
+        intent.putExtra("current", currIndex);
+        intent.putExtra("status", status);
+        intent.putExtra("mode", modeIndex);
+        intent.putExtra("nextIndex", nextIndex);
+        intent.putExtra("preIndex", preIndex);
+        sendBroadcast(intent);
     }
 
     private void setMode(int modeIndex){
@@ -239,54 +217,40 @@ public class DetailActivity extends AppCompatActivity {
         @Override
         public void onReceive(final Context context, Intent intent)
         {
-
-
-            status = intent.getIntExtra("status", -1);
-            currIndex = intent.getIntExtra("current", -1);
-            modeIndex = intent.getIntExtra("mode", modeIndex);
-            if (status > 0){
-                pause.setImageResource(R.drawable.playing);
-            }else{
-                pause.setImageResource(R.drawable.pause);
-            }
-
-            duration = itemBeanList.get(currIndex).getDuration() / 1000;
-            mSeekBar.setMax(duration );
-
-            String str = String.format("%02d:%02d", duration / 60, duration % 60);
-
-            tv_duration.setText(str);
-
-            tv_title.setText(itemBeanList.get(currIndex).title);
-
-            tv_artist.setText(itemBeanList.get(currIndex).artist);
-
-        }
-    }
-
-    public class MyProgressReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(final Context context, Intent intent)
-        {
-
             String action = intent.getAction();
-            Toast.makeText(DetailActivity.this, action, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(DetailActivity.this, action, Toast.LENGTH_SHORT).show();
             if(MainActivity.PROGRESS_ACTION.equals(action)){
                 int progress = intent.getIntExtra("progress", -1);
                 if(progress > 0){
                     currPosition = progress / 1000; // Remember the current position
-
                     String str = String.format("%02d:%02d", currPosition / 60, currPosition % 60);
 
                     mSeekBar.setProgress(currPosition);
                     tv_currPosition.setText(str);
-                    Toast.makeText(context, currPosition+"  currPosition111",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(DetailActivity.this, str, Toast.LENGTH_SHORT).show();
                 }
+            }else {
+
+                status = intent.getIntExtra("status", -1);
+                currIndex = intent.getIntExtra("current", -1);
+                modeIndex = intent.getIntExtra("mode", modeIndex);
+                if (status > 0) {
+                    pause.setImageResource(R.drawable.playing);
+                } else {
+                    pause.setImageResource(R.drawable.pause);
+                }
+
+                duration = itemBeanList.get(currIndex).getDuration() / 1000;
+                String str = String.format("%02d:%02d", duration / 60, duration % 60);
+
+                mSeekBar.setMax(duration);
+                tv_duration.setText(str);
+                tv_title.setText(itemBeanList.get(currIndex).title);
+                tv_artist.setText(itemBeanList.get(currIndex).artist);
             }
 
         }
     }
-
 
 
     @Override
