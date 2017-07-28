@@ -3,13 +3,18 @@ package com.example.mymusicapp;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Toast;
 import java.util.ArrayList;
@@ -19,28 +24,33 @@ import java.util.jar.Manifest;
 public class MyService extends Service {
 
     private MediaPlayer mediaPlayer = new MediaPlayer();
-    private int currIndex, duration, status , modeIndex = 1, nextIndex = -1, preIndex = -1, pro = -1;
+    private int currIndex, duration, status , modeIndex = 1, progress = 0;
     private String mTitle;
 
     private static final int updateProgress = 1;
     private static final int updateCurrentMusic = 2;
     private static final int updateDuration = 3;
+    private Binder musicBinder = new MusicBinder();
+    private static ContentResolver contentResolver;
+    private Cursor cursor = null;
+    private int oncePlay = -1;
 
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
 
-    MyReceiver activityReceiver;
     private Handler handler = new Handler(){
 
         public void handleMessage(Message msg){
             //Toast.makeText(MyService.this, msg.what+"  handleMessage", Toast.LENGTH_SHORT).show();
             switch(msg.what){
                 case updateProgress:
-                    if(mediaPlayer != null && (status > 0) ){
-                        int progress = mediaPlayer.getCurrentPosition();
+                    if(mediaPlayer != null  ){
+                        progress = mediaPlayer.getCurrentPosition();
                         Intent intent = new Intent(MainActivity.PROGRESS_ACTION);
 
                         //int currPosition = mediaPlayer.getCurrentPosition();
                         intent.putExtra("progress",progress);
+                        intent.putExtra("currIndex",currIndex);
+                        intent.putExtra("status",status);
                         //intent.putExtra("currPosition",currPosition);
                         sendBroadcast(intent);
                         handler.sendEmptyMessageDelayed(updateProgress, 1000);
@@ -57,13 +67,7 @@ public class MyService extends Service {
 
         itemBeanList = Musiclist.instance(getContentResolver()).getMusicList();
 
-        activityReceiver = new MyReceiver();
-        // 创建IntentFilter
-        IntentFilter filter = new IntentFilter();
-        // 指定BroadcastReceiver监听的Action
-        filter.addAction(MainActivity.UPDATE_ACTION);
-        // 注册BroadcastReceiver
-        registerReceiver(activityReceiver, filter);
+
 
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() // ①
         {
@@ -71,48 +75,42 @@ public class MyService extends Service {
             public void onCompletion(MediaPlayer mp)
             {
                 // Toast.makeText(MyService.this, modeIndex+"  setOnCompletionListener", Toast.LENGTH_SHORT).show();
-                switch (modeIndex){
-                    case 1:
-                        currIndex++;
-                        if (currIndex > itemBeanList.size()-1)
-                        {
-                            mediaPlayer.pause();
-                        }
-                        break;
+                if (oncePlay > 0){
+                    mediaPlayer.stop();
+                    oncePlay = -1;
+                }else {
+                    switch (modeIndex) {
+                        case 1:
+                            currIndex++;
+                            if (currIndex > itemBeanList.size() - 1) {
+                                mediaPlayer.pause();
+                                status = -1;
+                            }else {
+                                play(itemBeanList.get(currIndex).url);
+                            }
+                            break;
 
-                    case 2:
-                        currIndex++;
-                        if (currIndex >= itemBeanList.size()-1)
-                        {
-                            currIndex = 0;
-                        }
-                        break;
+                        case 2:
+                            currIndex++;
+                            if (currIndex >= itemBeanList.size() - 1) {
+                                currIndex = 0;
+                            }
+                            break;
 
-                    case 3:
-                        play(itemBeanList.get(currIndex).url);
-                        break;
+                        case 3:
+                            play(itemBeanList.get(currIndex).url);
+                            status = 1;
+                            break;
 
-                    case 4:
-                        currIndex = getRandomPosition();
-                        play(itemBeanList.get(currIndex).url);
-                        break;
+                        case 4:
+                            currIndex = getRandomPosition();
+                            play(itemBeanList.get(currIndex).url);
+                            status = 1;
+                            break;
+                    }
                 }
 
-                status = 1;
-                //发送广播通知Activity更改文本框
 
-                mTitle = itemBeanList.get(currIndex).title;
-                int currPosition = mediaPlayer.getCurrentPosition();
-
-                Intent sendIntent = new Intent(MainActivity.PLAYING_ACTION);
-                sendIntent.putExtra("current", currIndex);
-                sendIntent.putExtra("status", status);
-                sendIntent.putExtra("title", mTitle);
-                    sendIntent.putExtra("mode", modeIndex);
-                // 发送广播，将被Activity组件中的BroadcastReceiver接收到
-                sendBroadcast(sendIntent);
-                // 准备并播放音乐
-                play(itemBeanList.get(currIndex).url);
             }
         });
 
@@ -121,7 +119,7 @@ public class MyService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
-        return null;
+        return musicBinder;
     }
 
     private int getRandomPosition(){
@@ -152,42 +150,65 @@ public class MyService extends Service {
         }
     }
 
-    public class MyReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(final Context context, Intent intent)
-        {
-           int current = intent.getIntExtra("current", -1);
-            status = intent.getIntExtra("status", -1);
-            // 处理中间按钮
-            if (status < 0){
-                mediaPlayer.pause();
-                handler.sendEmptyMessage(updateProgress);
-            }else if(current == currIndex ) {
+
+    class MusicBinder extends Binder {
+
+        public void startPlay(int index){
+            currIndex = index;
+            if (status == 0){
+                play(itemBeanList.get(currIndex).url);
+            }
+            if (status == -1){
                 mediaPlayer.start();
+            }
+            if(status > 0){
+                play(itemBeanList.get(currIndex).url);
+            }
+            status = 1;
+        }
+
+        public void stopPlay(){
+            mediaPlayer.pause();
+            status = -1;
+        }
+
+        public void play1(Uri url){
+            mediaPlayer.reset();
+            try {
+                mediaPlayer.setDataSource(MyService.this,url);
+                mediaPlayer.prepare();
+                mediaPlayer.start();
+                oncePlay = 1;
                 handler.sendEmptyMessage(updateProgress);
-                status = 1;
-            }else {
-                currIndex = current;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        public int toNext(){
+            if (modeIndex == 4){
+                currIndex = getRandomPosition();
                 play(itemBeanList.get(currIndex).url);
             }
 
-            // 处理点击下一首的按钮
-            nextIndex = intent.getIntExtra("nextIndex", -1);
-            if (nextIndex > 0){
+            if (modeIndex == 1 || modeIndex == 2 || modeIndex == 3){
                 currIndex = currIndex+1;
                 if(currIndex  >= itemBeanList.size()){
                     currIndex = 0;
                 }
-                //
-                // play(itemBeanList.get(currIndex).url);
-                //currIndex = getRandomPosition();
                 play(itemBeanList.get(currIndex).url);
-                status = 1;
+            }
+            status = 1;
+            return currIndex;
+        }
+
+        public int toPrevious(){
+            if (modeIndex == 4){
+                currIndex = getRandomPosition();
+                play(itemBeanList.get(currIndex).url);
             }
 
-            // 处理点击上一首的按钮
-            preIndex = intent.getIntExtra("preIndex", -1);
-            if (preIndex > 0){
+            if (modeIndex == 1 || modeIndex == 2 || modeIndex == 3){
                 currIndex = currIndex-1;
                 if(currIndex  < 0){
                     currIndex = itemBeanList.size() - 1;
@@ -195,31 +216,19 @@ public class MyService extends Service {
                 play(itemBeanList.get(currIndex).url);
                 status = 1;
             }
-
-            modeIndex = intent.getIntExtra("mode", 1);
-
-            pro = intent.getIntExtra("pro", -1);
-            if ( pro > 0){
-                mediaPlayer.seekTo(pro);
-            }
-
-            Intent intent1 = new Intent(MainActivity.PLAYING_ACTION);
-            int currPosition = mediaPlayer.getCurrentPosition();
-            intent1.putExtra("status", status);
-            intent1.putExtra("current", currIndex);
-            intent1.putExtra("currPosition", currPosition);
-            intent1.putExtra("mode", modeIndex);
-            sendBroadcast(intent1);
-
+            status = 1;
+            return currIndex;
         }
 
+        public void changeMode(int mode){
+            modeIndex = mode;
+        }
+
+
         public void changeProgress(int progress){
-            if(mediaPlayer != null){
-                int currentPosition = progress * 1000;
-                if(status > 0){
-                    mediaPlayer.seekTo(currentPosition);
-                }
-            }
+
+            int currPosition = progress * 1000;
+            mediaPlayer.seekTo(currPosition);
         }
     }
 

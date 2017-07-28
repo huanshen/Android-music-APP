@@ -1,13 +1,16 @@
 package com.example.mymusicapp;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.media.Image;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -39,13 +42,11 @@ public class MainActivity extends AppCompatActivity {
 
     private ImageButton  start;
 
-    Intent intentService;
-
     private SeekBar mSeekBar;
 
     private TextView tv;
     // 1播放 -1暂停
-    private int status = -1;
+    private int status = 0;
 
     private boolean hadDestroy = false;
 
@@ -55,12 +56,33 @@ public class MainActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer = new MediaPlayer();
 
     // 表示当前播放的音乐索引, 播放位置
-    private int currIndex = 0, duration, currPosition, modeIndex = 1, preIndex, nextIndex;
+    private int currIndex = 0, duration, currPosition = 0, modeIndex = 1, preIndex, nextIndex;
 
     MyPlayingReceiver activityReceiver;
 
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
     Musiclist.MusicInfo musicInfo;
+
+    private MyService.MusicBinder musicBinder;
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            musicBinder = (MyService.MusicBinder) service;
+            setListener();
+        }
+    };
+
+    private void connectToNatureService(){
+        Intent intent = new Intent(MainActivity.this, MyService.class);
+        bindService(intent, serviceConnection, BIND_AUTO_CREATE);
+    }
 
 
     @Override
@@ -69,24 +91,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         itemBeanList = Musiclist.instance(getContentResolver()).getMusicList();
-
+        connectToNatureService();
         initView();
-        setListener();
 
         activityReceiver = new MyPlayingReceiver();
         IntentFilter filter = new IntentFilter();
-        filter.addAction(PLAYING_ACTION);
-        filter.addAction(UPDATE_ACTION);
         filter.addAction(PROGRESS_ACTION);
         registerReceiver(activityReceiver, filter);
 
         //设置ListView的数据适配器
         mListView.setAdapter(new MyAdapter(this,itemBeanList));
 
-        Intent intentService = new Intent(this, MyService.class);
 
-        // 启动后台Service
-        startService(intentService);
     }
 
     public boolean onCreateOptionsMenu(Menu menu)
@@ -111,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case 0:
                 finish();
-                stopService(intentService);
+
                 break;
         }
         return true;
@@ -138,17 +154,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View arg0) {
 
-                if( status < 0){
+                if( status <=0){
                     // 按下的时候字符串是不变的
-                    status = 1;
                     tv.setText(itemBeanList.get(currIndex).title);
                     start.setImageResource(R.drawable.playing);
+                    musicBinder.startPlay(currIndex);
+                    status = 1;
                 }else{
                     // 按下的时候字符串是不变的
                     status = -1;
                     start.setImageResource(R.drawable.pause);
+                    musicBinder.stopPlay();
                 }
-                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
             }
         });
 
@@ -156,13 +173,12 @@ public class MainActivity extends AppCompatActivity {
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                status = 1;
                 currIndex = i;
-                musicInfo = itemBeanList.get(currIndex);
-                duration = musicInfo.duration;
-                tv.setText(musicInfo.title);
+                musicBinder.startPlay(currIndex);
+                status = 1;
+                tv.setText(itemBeanList.get(currIndex).title);
                 start.setImageResource(R.drawable.playing);
-                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
+
             }
         });
 
@@ -173,29 +189,12 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View arg0) {
                 Intent intent = new Intent(MainActivity.this, DetailActivity.class);
                 intent.putExtra("status",status);
-                intent.putExtra("current",currIndex);
-                intent.putExtra("nextIndex", -1);
-                intent.putExtra("preIndex", -1);
-                intent.putExtra("mode", modeIndex);
-                intent.putExtra("currPosition", currPosition);
+                intent.putExtra("currIndex",currIndex);
+                intent.putExtra("progress",currPosition);
                 startActivityForResult(intent, 1000);
-
-                sendUpdateBroadcast(status, currIndex, modeIndex, -1, -1);
-               // Toast.makeText(MainActivity.this, status  +"tiaozhuan", Toast.LENGTH_SHORT).show();
-
             }
 
         });
-    }
-
-    private void  sendUpdateBroadcast(int status, int currIndex, int modeIndex, int nextIndex, int preIndex){
-        Intent intent = new Intent(MainActivity.UPDATE_ACTION);
-        intent.putExtra("current", currIndex);
-        intent.putExtra("status", status);
-        intent.putExtra("mode", modeIndex);
-        intent.putExtra("nextIndex", nextIndex);
-        intent.putExtra("preIndex", preIndex);
-        sendBroadcast(intent);
     }
 
     /**
@@ -215,31 +214,16 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(final Context context, Intent intent)
         {
             String action = intent.getAction();
-            if(MainActivity.UPDATE_ACTION.equals(action)){
+            if(MainActivity.PROGRESS_ACTION.equals(action)){
+                currPosition = intent.getIntExtra("progress", -1);
+                currIndex = intent.getIntExtra("currIndex", -1);
                 status = intent.getIntExtra("status", -1);
-                currIndex = intent.getIntExtra("current", -1);
-                musicInfo = itemBeanList.get(currIndex);
-                tv.setText(musicInfo.title);
-
-                status = intent.getIntExtra("status", -1);
-                // 处理中间按钮
+                tv.setText(itemBeanList.get(currIndex).title);
                 if (status < 0){
                     start.setImageResource(R.drawable.pause);
                 }else{
                     start.setImageResource(R.drawable.playing);
                 }
-
-            }else if(MainActivity.PROGRESS_ACTION.equals(action)){
-                int progress = intent.getIntExtra("progress", -1);
-                if(progress > 0){
-                    currPosition = progress;
-                    // Toast.makeText(context, progress, Toast.LENGTH_SHORT).show();
-                }
-            } else{
-                currIndex = intent.getIntExtra("current", -1);
-                status = intent.getIntExtra("status", -1);
-                tv.setText(itemBeanList.get(currIndex).title);
-                modeIndex = intent.getIntExtra("mode", modeIndex);
             }
 
         }
@@ -249,16 +233,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if( resultCode == RESULT_OK){
-            currIndex = data.getIntExtra("current", -1);
-            status = data.getIntExtra("status", -1);
-            modeIndex = data.getIntExtra("mode", -1);
-
+            currIndex = data.getIntExtra("currIndex", -1);
             tv.setText(itemBeanList.get(currIndex).title);
             if (status < 0){
                 start.setImageResource(R.drawable.pause);
             }else{
                 start.setImageResource(R.drawable.playing);
-                //Toast.makeText(MainActivity.this, status +"   onActivityResult", Toast.LENGTH_SHORT).show();
             }
         }
     }
