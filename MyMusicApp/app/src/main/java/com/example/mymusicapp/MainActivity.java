@@ -126,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+
     public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.toolbar, menu);
@@ -134,6 +135,8 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onCreateOptionsMenu(menu);
     }
+
+
     @Override
     // 选项菜单的菜单项被单击后的回调方法
     public boolean onOptionsItemSelected(MenuItem mi)

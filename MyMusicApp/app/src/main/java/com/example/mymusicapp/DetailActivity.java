@@ -15,14 +15,20 @@ import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.ListViewCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,21 +37,23 @@ import com.example.mymusicapp.MyService.MusicBinder;
 public class DetailActivity extends AppCompatActivity {
 
     private TextView tv_title, tv_artist, tv_currPosition, tv_duration;
+    private ListView tv_lrc;
     private ImageButton pause, pre, next, mode;
     private SeekBar mSeekBar;
     private Uri mUri;
     // modeIndex 1 seq , 2 loop ,3 rep, 4 random
-    private int status = 0, currIndex, modeIndex, nextIndex = -1, preIndex = -1, duration = 0, currPosition;
+    private int status = 0, currIndex = 0, i = 0, modeIndex, nextIndex = -1, preIndex = -1, duration = 0, currPosition;
     MyPlayingReceiver myPlayingReceiver;
     private String title, artist;
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
     private Musiclist.MusicInfo musicInfo;
-
     private MusicBinder musicBinder;
-
     private MediaPlayer mediaPlayer1 = new MediaPlayer();
     private static ContentResolver contentResolver;
     private Cursor cursor = null;
+    private ArrayList<LrcContent> list = new ArrayList<>();
+    private LrcAdapter lrcAdapter;
+
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
@@ -71,6 +79,25 @@ public class DetailActivity extends AppCompatActivity {
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
     }
 
+
+    private void readLrc (){
+        LrcProcess mLrcProcess = new LrcProcess();
+        //读取歌词文件
+        String line;
+        InputStream is = getResources().openRawResource(R.raw.yellow);
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+       /* try {
+            while((line = br.readLine()) != null) {
+                list.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+        list = mLrcProcess.readLRC(br);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,6 +112,9 @@ public class DetailActivity extends AppCompatActivity {
         initReceiver();
         connectToNatureService();
         getIntentData ();
+        readLrc ();
+        lrcAdapter = new LrcAdapter(this, list);
+        tv_lrc.setAdapter(lrcAdapter);
 
 
         AsyncQueryHandler mAsyncQueryHandler = new AsyncQueryHandler(getContentResolver()) {
@@ -126,6 +156,7 @@ public class DetailActivity extends AppCompatActivity {
         }
 
     }
+
 
 /*    public void onResume(){
         super.onResume();
@@ -204,6 +235,7 @@ public class DetailActivity extends AppCompatActivity {
     public void initView(){
         tv_title = (TextView) findViewById(R.id.tv_title);
         tv_artist = (TextView) findViewById(R.id.tv_artist);
+        tv_lrc = (ListView) findViewById(R.id.tv_lrc);
         pause = (ImageButton) findViewById(R.id.pause);
         mode = (ImageButton) findViewById(R.id.mode);
         next = (ImageButton) findViewById(R.id.next);
@@ -339,7 +371,19 @@ public class DetailActivity extends AppCompatActivity {
                 int progress = intent.getIntExtra("progress", -1);
                 int index = intent.getIntExtra("currIndex", -1);
 
+                Log.i("1114444444", currIndex+"  "+index);
                 if ( index >= 0){
+
+                    if (list.get(i+2).lrcTime >= progress && (list.get(i).lrcTime <= progress) ){
+                        i = i + 1;
+                        tv_lrc.setSelection(i);
+                        if(i <= list.size()-5){
+                            i = i - 1;
+                        }
+                    }
+                   Log.i("111111111", progress+"");
+                    // Toast.makeText(DetailActivity.this, list.get(i).lrcTime + "   "+ progress, Toast.LENGTH_SHORT).show();
+                    // Toast.makeText(DetailActivity.this, list.get(i).lrcTime + "   "+ progress, Toast.LENGTH_SHORT).show();
                     currIndex = index;
                     title = itemBeanList.get(currIndex).title;
                     artist = itemBeanList.get(currIndex).artist;

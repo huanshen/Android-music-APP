@@ -4,16 +4,13 @@
     android:id="@+id/activity_detail"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="12dp"
-    android:paddingLeft="12dp"
-    android:paddingRight="12dp"
-    android:paddingTop="12dp"
     android:orientation="vertical"
     tools:context="com.example.mymusicapp.DetailActivity">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/linear"
+        android:layout_margin="10dp"
         android:orientation="vertical">
     <TextView
         android:layout_height="wrap_content"
@@ -31,21 +28,20 @@
         android:gravity="center"
         android:id="@+id/tv_artist">
     </TextView>
-
-
     </LinearLayout>
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="10dp"
         android:layout_below="@id/linear">
-        <ImageView
+        <ListView
             android:layout_width="match_parent"
-            android:layout_height="350dp"
-            android:layout_gravity="center"
-            android:id="@+id/iv_image"
-            android:layout_margin="10dp"
-            android:background="@color/colorAccent">
-        </ImageView>
+            android:layout_height="wrap_content"
+            android:divider="#fff"
+            android:gravity="center"
+            android:id="@+id/tv_lrc"
+            />
+
     </RelativeLayout>
 
 
@@ -57,13 +53,14 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_alignParentBottom="true"
-        android:layout_margin="10dp"
         android:id="@+id/bot"
+        android:background="@color/colorAccent"
         >
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="bottom|center_horizontal"
+            android:layout_margin="8dp"
             android:layout_gravity="bottom|center_horizontal">
 
             <ImageButton
@@ -102,18 +99,21 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="30dp"
+        android:layout_height="40dp"
         android:orientation="horizontal"
         android:layout_gravity="bottom"
         android:gravity="center"
         android:layout_marginTop="10dp"
         android:layout_above="@+id/bot"
+        android:background="#fff"
         android:layout_centerHorizontal="true">
         <TextView
             android:layout_height="match_parent"
             android:layout_width="wrap_content"
             android:text="00:00"
             android:gravity="center"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
             android:id="@+id/tv_currPosition"/>
 
         <TextView

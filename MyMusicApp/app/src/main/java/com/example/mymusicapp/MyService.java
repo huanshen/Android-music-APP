@@ -46,7 +46,7 @@ public class MyService extends Service {
                     if(mediaPlayer != null  ){
                         progress = mediaPlayer.getCurrentPosition();
                         Intent intent = new Intent(MainActivity.PROGRESS_ACTION);
-
+                        Log.i("1133333333", progress+"");
                         //int currPosition = mediaPlayer.getCurrentPosition();
                         intent.putExtra("progress",progress);
                         intent.putExtra("currIndex",currIndex);
