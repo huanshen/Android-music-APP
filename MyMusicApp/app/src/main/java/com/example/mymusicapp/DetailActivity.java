@@ -37,7 +37,7 @@ public class DetailActivity extends AppCompatActivity {
     // modeIndex 1 seq , 2 loop ,3 rep, 4 random
     private int status = 0, currIndex, modeIndex, nextIndex = -1, preIndex = -1, duration = 0, currPosition;
     MyPlayingReceiver myPlayingReceiver;
-    private String title;
+    private String title, artist;
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
     private Musiclist.MusicInfo musicInfo;
 
@@ -92,19 +92,17 @@ public class DetailActivity extends AppCompatActivity {
             protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
                 if (cursor != null && cursor.moveToFirst()) {
 
-                    String titleIdx = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE));
-                    int duration = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)) / 1000;
-                    String artist = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST));
+                    title = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE));
+                    duration = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)) / 1000;
+                    artist = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST));
                     /*String url = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA));
                     int album = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
                     int id = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media._ID));*/
 
-                    tv_title.setText(titleIdx);
+                    tv_title.setText(title);
                     tv_artist.setText(artist);
-
                     mSeekBar.setMax(duration );
-                    String str = String.format("%02d:%02d", duration / 60, duration % 60);
-                    tv_duration.setText(str);
+                    tv_duration.setText(timeFormat(duration));
                 }
 
                 if (cursor != null) {
@@ -113,7 +111,7 @@ public class DetailActivity extends AppCompatActivity {
                 //setNames();
             }
         };
-        
+
         try {
             String path = mUri.getPath();
             if (path != null ) {
@@ -128,6 +126,35 @@ public class DetailActivity extends AppCompatActivity {
         }
 
     }
+
+/*    public void onResume(){
+        super.onResume();
+        initReceiver();
+        if(musicBinder != null){
+            if(musicBinder.isPlaying() > 0){
+                pause.setImageResource(R.drawable.pause);
+            }else{
+                pause.setImageResource(R.drawable.playing);
+            }
+            // natureBinder.notifyActivity();
+        }
+    }
+
+    public void onPause(){
+        super.onPause();
+    }
+
+    public void onStop(){
+        super.onStop();
+    }
+
+    public void onDestroy(){
+        super.onDestroy();
+        unregisterReceiver(myPlayingReceiver);
+        if(musicBinder != null){
+            unbindService(serviceConnection);
+        }
+    }*/
 
 
     private  void getIntentData (){
@@ -310,19 +337,30 @@ public class DetailActivity extends AppCompatActivity {
             //Toast.makeText(DetailActivity.this, action, Toast.LENGTH_SHORT).show();
             if(MainActivity.PROGRESS_ACTION.equals(action)){
                 int progress = intent.getIntExtra("progress", -1);
-                currIndex = intent.getIntExtra("currIndex", -1);
+                int index = intent.getIntExtra("currIndex", -1);
 
-                    tv_title.setText(itemBeanList.get(currIndex).title);
-                    tv_artist.setText(itemBeanList.get(currIndex).artist);
-                    currPosition = progress / 1000; // Remember the current position
-                    mSeekBar.setProgress(currPosition);
-                    tv_currPosition.setText(timeFormat(currPosition));
-
-
+                if ( index >= 0){
+                    currIndex = index;
+                    title = itemBeanList.get(currIndex).title;
+                    artist = itemBeanList.get(currIndex).artist;
+                    tv_title.setText(title);
+                    tv_artist.setText(artist);
                     duration = itemBeanList.get(currIndex).getDuration() / 1000;
                     mSeekBar.setMax(duration);
                     tv_duration.setText(timeFormat(duration));
-                   // Toast.makeText(DetailActivity.this, str, Toast.LENGTH_SHORT).show();
+                }else {
+                    duration = intent.getIntExtra("duration", -1) / 1000;
+                    mSeekBar.setMax(duration);
+                    tv_duration.setText(timeFormat(duration));
+                    pause.setImageResource(R.drawable.playing);
+                }
+
+
+                currPosition = progress / 1000;
+                mSeekBar.setProgress(currPosition);
+                tv_currPosition.setText(timeFormat(currPosition));
+
+
 
             }else {
 
@@ -336,12 +374,13 @@ public class DetailActivity extends AppCompatActivity {
                 }
 
                 duration = itemBeanList.get(currIndex).getDuration() / 1000;
-                String str = String.format("%02d:%02d", duration / 60, duration % 60);
-
                 mSeekBar.setMax(duration);
-                tv_duration.setText(str);
-                tv_title.setText(itemBeanList.get(currIndex).title);
-                tv_artist.setText(itemBeanList.get(currIndex).artist);
+                tv_duration.setText(timeFormat(duration));
+
+                title = itemBeanList.get(currIndex).title;
+                artist = itemBeanList.get(currIndex).artist;
+                tv_title.setText(title);
+                tv_artist.setText(artist);
             }
 
         }

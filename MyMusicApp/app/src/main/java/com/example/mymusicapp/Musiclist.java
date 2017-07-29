@@ -25,7 +25,7 @@ public class Musiclist {
     List<MusicInfo> itemBeanList = new ArrayList<>();
 
     public static Musiclist instance(ContentResolver pContentResolver){
-        if(musiclist == null){
+         if(musiclist == null){
             contentResolver = pContentResolver;
             musiclist = new Musiclist();
         }

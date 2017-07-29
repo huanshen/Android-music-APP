@@ -24,11 +24,11 @@ import java.util.jar.Manifest;
 public class MyService extends Service {
 
     private MediaPlayer mediaPlayer = new MediaPlayer();
-    private int currIndex, duration, status , modeIndex = 1, progress = 0;
+    private int currIndex, duration = 0, status , modeIndex = 1, progress = 0;
     private String mTitle;
 
     private static final int updateProgress = 1;
-    private static final int updateCurrentMusic = 2;
+    private static final int updateOnceMusic = 2;
     private static final int updateDuration = 3;
     private Binder musicBinder = new MusicBinder();
     private static ContentResolver contentResolver;
@@ -51,12 +51,30 @@ public class MyService extends Service {
                         intent.putExtra("progress",progress);
                         intent.putExtra("currIndex",currIndex);
                         intent.putExtra("status",status);
+                        intent.putExtra("duration",duration);
                         //intent.putExtra("currPosition",currPosition);
                         sendBroadcast(intent);
                         handler.sendEmptyMessageDelayed(updateProgress, 1000);
                         //Toast.makeText(MyService.this, progress+"  jindutiao", Toast.LENGTH_SHORT).show();
                     }
                     break;
+                case updateOnceMusic:
+                    if(mediaPlayer != null  ){
+                        progress = mediaPlayer.getCurrentPosition();
+                        Intent intent = new Intent(MainActivity.PROGRESS_ACTION);
+
+                        //int currPosition = mediaPlayer.getCurrentPosition();
+                        intent.putExtra("progress",progress);
+                        intent.putExtra("currIndex",-1);
+                        intent.putExtra("status",status);
+                        intent.putExtra("duration",duration);
+                        //intent.putExtra("currPosition",currPosition);
+                        sendBroadcast(intent);
+                        handler.sendEmptyMessageDelayed(updateOnceMusic, 1000);
+                        //Toast.makeText(MyService.this, progress+"  jindutiao", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+
             }
         }
     };
@@ -179,7 +197,8 @@ public class MyService extends Service {
                 mediaPlayer.prepare();
                 mediaPlayer.start();
                 oncePlay = 1;
-                handler.sendEmptyMessage(updateProgress);
+                duration = mediaPlayer.getDuration();
+                handler.sendEmptyMessage(updateOnceMusic);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -218,6 +237,10 @@ public class MyService extends Service {
             }
             status = 1;
             return currIndex;
+        }
+
+        public  int isPlaying(){
+            return status;
         }
 
         public void changeMode(int mode){

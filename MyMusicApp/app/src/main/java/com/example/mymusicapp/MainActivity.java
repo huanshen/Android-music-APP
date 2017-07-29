@@ -11,6 +11,12 @@ import android.media.Image;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.design.widget.NavigationView;
+import android.support.design.widget.SwipeDismissBehavior;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -22,6 +28,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,44 +40,60 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final String ACTIVITY_TAG="LogDemo";
-
     public static final String UPDATE_ACTION = "com.example.mymusicapp.UPDATE_ACTION";
     public static final String PROGRESS_ACTION = "com.example.mymusicapp.PROGRESS_ACTION";
     public static final String PLAYING_ACTION = "com.example.mymusicapp.PLAYING";
-
-    ListView mListView ;
-
+    private ListView mListView ;
     private ImageButton  start;
-
     private SeekBar mSeekBar;
-
     private TextView tv;
     // 1播放 -1暂停
     private int status = 0;
-
-    private boolean hadDestroy = false;
-
-    private LinearLayout root;
-
-    //播放音频的
-    private MediaPlayer mediaPlayer = new MediaPlayer();
-
-    // 表示当前播放的音乐索引, 播放位置
+    private String title;
+    private RelativeLayout root;
+    private MyAdapter adapter;
+    private DrawerLayout drawerLayout;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private Musiclist.MusicInfo newMusic;
     private int currIndex = 0, duration, currPosition = 0, modeIndex = 1, preIndex, nextIndex;
-
-    MyPlayingReceiver activityReceiver;
-
-    List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
-    Musiclist.MusicInfo musicInfo;
-
+    private MyPlayingReceiver activityReceiver;
+    private List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
+    private Musiclist.MusicInfo musicInfo;
     private MyService.MusicBinder musicBinder;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        itemBeanList = Musiclist.instance(getContentResolver()).getMusicList();
+        connectToNatureService();
+        initView();
+        registerReceiver();
+
+        //设置ListView的数据适配器
+        adapter = new MyAdapter(this,itemBeanList);
+        mListView.setAdapter(adapter);
+        if (savedInstanceState != null) {
+            title = savedInstanceState.getString("title");
+            tv.setText(title);
+            Toast.makeText(MainActivity.this, title, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outcicle) {
+        // need to store the selected item so we don't lose it in case
+        // of an orientation switch. Otherwise we could lose it while
+        // in the middle of specifying a playlist to add the item to.
+        outcicle.putString("title", title);
+        super.onSaveInstanceState(outcicle);
+    }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
+        public void onServiceDisconnected(ComponentName name) {}
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -85,29 +108,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        itemBeanList = Musiclist.instance(getContentResolver()).getMusicList();
-        connectToNatureService();
-        initView();
-
+    public  void registerReceiver(){
         activityReceiver = new MyPlayingReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(PROGRESS_ACTION);
         registerReceiver(activityReceiver, filter);
-
-        //设置ListView的数据适配器
-        mListView.setAdapter(new MyAdapter(this,itemBeanList));
+    }
 
 
+
+    public void onDestroy(){
+        unregisterReceiver(activityReceiver);
+        adapter =null;
+        if(musicBinder != null){
+            unbindService(serviceConnection);
+        }
+        super.onDestroy();
     }
 
     public boolean onCreateOptionsMenu(Menu menu)
     {
-
+        getMenuInflater().inflate(R.menu.toolbar, menu);
         menu.add(0, 1, 0, "设置");
         menu.add(0, 0, 0, "退出");
 
@@ -117,9 +138,7 @@ public class MainActivity extends AppCompatActivity {
     // 选项菜单的菜单项被单击后的回调方法
     public boolean onOptionsItemSelected(MenuItem mi)
     {
-        //判断单击的是哪个菜单项，并有针对性地作出响应
-        switch (mi.getItemId())
-        {
+        switch (mi.getItemId()) {
             case 1:
                 Intent intent = new Intent(MainActivity.this, SettingActivity.class);
                 startActivity(intent);
@@ -127,7 +146,18 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case 0:
                 finish();
-
+                break;
+            case android.R.id.home:
+                drawerLayout.openDrawer(GravityCompat.START);
+                break;
+            case R.id.backup:
+                Toast.makeText(this, "You clicked Backup", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.delete:
+                Toast.makeText(this, "You clicked Delete", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.settings:
+                Toast.makeText(this, "You clicked Settings", Toast.LENGTH_SHORT).show();
                 break;
         }
         return true;
@@ -141,9 +171,59 @@ public class MainActivity extends AppCompatActivity {
         start = (ImageButton) findViewById(R.id.start);
         tv = (TextView) findViewById(R.id.tv);
         mListView = (ListView) findViewById(R.id.lv_main);
-        root = (LinearLayout) findViewById(R.id.root);
-        tv.setText(itemBeanList.get(currIndex).title);
+        root = (RelativeLayout) findViewById(R.id.root);
+        title = itemBeanList.get(currIndex).title;
+        tv.setText(title);
+        /*drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        NavigationView navView = (NavigationView) findViewById(R.id.nav_view);*/
+
+        /*ActionBar actionBar = getSupportActionBar();
+        if(actionBar != null){
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setHomeAsUpIndicator(R.mipmap.ic_menu);
+        }
+
+       navView.setCheckedItem(R.id.nav_call);
+        navView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(MenuItem item) {
+                drawerLayout.closeDrawers();
+                return true;
+            }
+        });*/
+
+        /*swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshFruits();
+            }
+        });*/
     }
+
+    /*private void refreshFruits() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        newMusic = itemBeanList.get(2);
+                        itemBeanList.add(newMusic);
+                        adapter.notifyDataSetChanged();
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+        }).start();
+    }*/
 
     /**
      * 设置各类点击事件
@@ -197,17 +277,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Activity被销毁
-     */
-    @Override
-    protected void onDestroy() {
-        if (mediaPlayer.isPlaying()) {
-            mediaPlayer.stop();//停止音频的播放
-        }
-        mediaPlayer.release();//释放资源
-        super.onDestroy();
-    }
 
     public class MyPlayingReceiver extends BroadcastReceiver {
         @Override
@@ -216,9 +285,13 @@ public class MainActivity extends AppCompatActivity {
             String action = intent.getAction();
             if(MainActivity.PROGRESS_ACTION.equals(action)){
                 currPosition = intent.getIntExtra("progress", -1);
-                currIndex = intent.getIntExtra("currIndex", -1);
+                int index = intent.getIntExtra("currIndex", -1);
                 status = intent.getIntExtra("status", -1);
-                tv.setText(itemBeanList.get(currIndex).title);
+                if (index >= 0){
+                    currIndex = index;
+                    tv.setText(itemBeanList.get(currIndex).title);
+                }
+
                 if (status < 0){
                     start.setImageResource(R.drawable.pause);
                 }else{
@@ -242,4 +315,38 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    @Override
+    public void onBackPressed() {
+        if(musicBinder != null){
+            unbindService(serviceConnection);
+        }
+        finish();
+
+    }
+
+    /*@Override
+    public void onPause(){
+        super.onPause();
+        musicBinder.stopPlay();
+        //overridePendingTransition(R.anim.hold, R.anim.push_right_out);
+    }
+
+    public void onStop(){
+        super.onStop();
+
+    }
+    public void onResume(){
+        super.onResume();
+        registerReceiver();
+        if(musicBinder != null){
+            if(musicBinder.isPlaying() > 0){
+                start.setImageResource(R.drawable.pause);
+            }else{
+                start.setImageResource(R.drawable.playing);
+            }
+            // natureBinder.notifyActivity();
+        }
+    }
+*/
 }
