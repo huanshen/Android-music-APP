@@ -45,8 +45,9 @@ public class Musiclist {
         public long size;
         public String artist;
         public String url;
+        public int album_id;
 
-        public MusicInfo(int itemImageResId, String title, int duration, int id, int album, long size, String artist, String url) {
+        public MusicInfo(int itemImageResId, String title, int duration, int id, int album, long size, String artist, String url, int album_id) {
             this.itemImageResId = itemImageResId;
             this.title = title;
             this.duration = duration;
@@ -55,6 +56,7 @@ public class Musiclist {
             this.size = size;
             this.artist = artist;
             this.url = url;
+            this.album_id = album_id;
         }
 
         public String getArtist() {
@@ -131,7 +133,8 @@ public class Musiclist {
                     long size = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.SIZE));
                     int album = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
                     int id = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media._ID));
-                    itemBeanList.add(new MusicInfo(R.mipmap.ic_launcher, displayName, duration, id, album, size, artist, url));
+                    int album_id = cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
+                    itemBeanList.add(new MusicInfo(R.mipmap.ic_launcher, displayName, duration, id, album, size, artist, url, album_id));
                 }
 
             }

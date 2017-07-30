@@ -49,9 +49,7 @@
         android:layout_width="match_parent"
         android:id="@+id/lv_relative"
         android:layout_height="wrap_content"
-        android:layout_above="@id/root"
-
-        >
+        android:layout_above="@id/root">
 
         <ListView
             android:id="@+id/lv_main"
@@ -59,5 +57,4 @@
             android:layout_height="wrap_content"
              />
     </RelativeLayout>
-
 </RelativeLayout>

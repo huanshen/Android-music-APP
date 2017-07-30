@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.IBinder;
@@ -18,8 +19,10 @@ import android.os.Bundle;
 import android.support.v7.widget.ListViewCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -42,7 +45,7 @@ public class DetailActivity extends AppCompatActivity {
     private SeekBar mSeekBar;
     private Uri mUri;
     // modeIndex 1 seq , 2 loop ,3 rep, 4 random
-    private int status = 0, currIndex = 0, i = 0, modeIndex, nextIndex = -1, preIndex = -1, duration = 0, currPosition;
+    private int status = 0, currIndex, i = 0, modeIndex, nextIndex = -1, preIndex = -1, duration = 0, currPosition;
     MyPlayingReceiver myPlayingReceiver;
     private String title, artist;
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
@@ -53,20 +56,17 @@ public class DetailActivity extends AppCompatActivity {
     private Cursor cursor = null;
     private ArrayList<LrcContent> list = new ArrayList<>();
     private LrcAdapter lrcAdapter;
+    private ImageView mImage;
 
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
+        public void onServiceDisconnected(ComponentName name) {}
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             musicBinder = (MusicBinder) service;
-
-
             if (mUri != null){
                 Uri url=Uri.parse((mUri+"").replace("file://",""));
                 musicBinder.play1(url);
@@ -82,19 +82,8 @@ public class DetailActivity extends AppCompatActivity {
 
     private void readLrc (){
         LrcProcess mLrcProcess = new LrcProcess();
-        //读取歌词文件
-        String line;
         InputStream is = getResources().openRawResource(R.raw.yellow);
-
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-       /* try {
-            while((line = br.readLine()) != null) {
-                list.add(line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
         list = mLrcProcess.readLRC(br);
     }
 
@@ -113,6 +102,7 @@ public class DetailActivity extends AppCompatActivity {
         connectToNatureService();
         getIntentData ();
         readLrc ();
+
         lrcAdapter = new LrcAdapter(this, list);
         tv_lrc.setAdapter(lrcAdapter);
 
@@ -225,6 +215,15 @@ public class DetailActivity extends AppCompatActivity {
         }else{
             pause.setImageResource(R.drawable.pause);
         }
+        int id = musicInfo.id;
+        int albumid = musicInfo.album_id;
+        Bitmap bm = MusicUtils.getArtwork(this, id, albumid,true);
+
+        if(bm != null){
+            mImage.setImageBitmap(bm);
+        }
+        Log.i("11111111111",bm +"");
+
         //time
         //Toast.makeText(DetailActivity.this, intent.getExtras()+" aa", Toast.LENGTH_SHORT).show();
     }
@@ -240,6 +239,7 @@ public class DetailActivity extends AppCompatActivity {
         mode = (ImageButton) findViewById(R.id.mode);
         next = (ImageButton) findViewById(R.id.next);
         pre = (ImageButton) findViewById(R.id.pre);
+        mImage = (ImageView) findViewById(R.id.mImage);
         mSeekBar = (SeekBar) findViewById(R.id.seekBar);
         tv_currPosition = (TextView) findViewById(R.id.tv_currPosition);
         tv_duration = (TextView) findViewById(R.id.tv_duration);
@@ -309,6 +309,20 @@ public class DetailActivity extends AppCompatActivity {
             }
         });
 
+        mImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mImage.setVisibility(View.INVISIBLE);
+            }
+        });
+
+        tv_lrc.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                mImage.setVisibility(View.VISIBLE);
+            }
+        });
+
 
         // 进度条事件
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -371,17 +385,16 @@ public class DetailActivity extends AppCompatActivity {
                 int progress = intent.getIntExtra("progress", -1);
                 int index = intent.getIntExtra("currIndex", -1);
 
-                Log.i("1114444444", currIndex+"  "+index);
                 if ( index >= 0){
 
-                    if (list.get(i+2).lrcTime >= progress && (list.get(i).lrcTime <= progress) ){
+                    if (list.get(i+3).lrcTime <= progress  ){
                         i = i + 1;
                         tv_lrc.setSelection(i);
-                        if(i <= list.size()-5){
+                        if(i >= list.size()-6){
                             i = i - 1;
                         }
                     }
-                   Log.i("111111111", progress+"");
+                   Log.i("111111111", progress+"     "  +list.get(i+5).lrcTime);
                     // Toast.makeText(DetailActivity.this, list.get(i).lrcTime + "   "+ progress, Toast.LENGTH_SHORT).show();
                     // Toast.makeText(DetailActivity.this, list.get(i).lrcTime + "   "+ progress, Toast.LENGTH_SHORT).show();
                     currIndex = index;
@@ -398,6 +411,15 @@ public class DetailActivity extends AppCompatActivity {
                     tv_duration.setText(timeFormat(duration));
                     pause.setImageResource(R.drawable.playing);
                 }
+                musicInfo = itemBeanList.get(currIndex);
+                int id = musicInfo.id;
+                int albumid = musicInfo.album_id;
+                Bitmap bm = MusicUtils.getArtwork(DetailActivity.this, id, albumid,true);
+
+                if(bm != null){
+                    mImage.setImageBitmap(bm);
+                }
+                Log.i("11111111111",bm +"");
 
 
                 currPosition = progress / 1000;

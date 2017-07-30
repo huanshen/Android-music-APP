@@ -145,19 +145,17 @@ public class MainActivity extends AppCompatActivity {
             case 1:
                 Intent intent = new Intent(MainActivity.this, SettingActivity.class);
                 startActivity(intent);
-
                 break;
             case 0:
+                unregisterReceiver(activityReceiver);
+                adapter =null;
+                if(musicBinder != null){
+                    unbindService(serviceConnection);
+                }
                 finish();
                 break;
             case android.R.id.home:
                 drawerLayout.openDrawer(GravityCompat.START);
-                break;
-            case R.id.backup:
-                Toast.makeText(this, "You clicked Backup", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.delete:
-                Toast.makeText(this, "You clicked Delete", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.settings:
                 Toast.makeText(this, "You clicked Settings", Toast.LENGTH_SHORT).show();

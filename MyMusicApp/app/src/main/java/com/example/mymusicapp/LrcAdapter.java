@@ -54,7 +54,7 @@ public class LrcAdapter extends BaseAdapter {
          * 找到item布局文件中对应的控件
          */
 
-        TextView titleTextView = (TextView) view.findViewById(R.id.tv_title);
+        TextView titleTextView =  view.findViewById(R.id.tv_title);
 
         //获取相应索引的ItemBean对象
         LrcContent music = mList.get(position);
@@ -63,7 +63,7 @@ public class LrcAdapter extends BaseAdapter {
          * 设置控件的对应属性值
          */
 
-        titleTextView.setText(music.getLrcStr());
+        titleTextView.setText(music.lrcStr);
 
         return view;
     }

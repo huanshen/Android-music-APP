@@ -9,10 +9,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
-
-
 public class LrcProcess {
 	private ArrayList <LrcContent> lrcList; //List集合存放歌词内容对象
 	private LrcContent mLrcContent;     //声明一个歌词内容对象
