@@ -217,12 +217,12 @@ public class DetailActivity extends AppCompatActivity {
         }
         int id = musicInfo.id;
         int albumid = musicInfo.album_id;
-        Bitmap bm = MusicUtils.getArtwork(this, id, albumid,true);
+        Bitmap bm = MusicUtils.getArtworkFromFile(this, id, albumid);
 
         if(bm != null){
             mImage.setImageBitmap(bm);
         }
-        Log.i("11111111111",bm +"");
+        // Log.i("11111111111",bm +"");
 
         //time
         //Toast.makeText(DetailActivity.this, intent.getExtras()+" aa", Toast.LENGTH_SHORT).show();
@@ -414,7 +414,7 @@ public class DetailActivity extends AppCompatActivity {
                 musicInfo = itemBeanList.get(currIndex);
                 int id = musicInfo.id;
                 int albumid = musicInfo.album_id;
-                Bitmap bm = MusicUtils.getArtwork(DetailActivity.this, id, albumid,true);
+                Bitmap bm = MusicUtils.getArtwork(DetailActivity.this, id, albumid, true);
 
                 if(bm != null){
                     mImage.setImageBitmap(bm);

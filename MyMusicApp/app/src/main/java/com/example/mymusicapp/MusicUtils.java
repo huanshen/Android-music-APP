@@ -94,7 +94,7 @@ public class MusicUtils {
     }
 
 
-    private static Bitmap getArtworkFromFile(Context context, long songid, long albumid) {
+    public static Bitmap getArtworkFromFile(Context context, long songid, long albumid) {
         Bitmap bm = null;
         byte[] art = null;
         String path = null;

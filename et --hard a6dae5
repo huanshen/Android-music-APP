@@ -1,0 +1,72 @@
+[33mcommit a6dae50841c14284466b58a5b105f7b476f07922[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Sun Jul 30 23:41:56 2017 +0800
+
+    add album cover
+
+[33mcommit 97aaf65157c8c3a0e8c90d248618048756a950ed[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Sun Jul 30 07:51:05 2017 +0800
+
+    add lrc
+
+[33mcommit af201e1642c3c225d48747a634f70090baf5701d[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Sat Jul 29 21:12:21 2017 +0800
+
+    style
+
+[33mcommit df3c8fd12f86c9f44ec1f47465aadce30d420ccd[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Fri Jul 28 11:11:57 2017 +0800
+
+    the third version
+
+[33mcommit 7a734db3f55d914f57e1865cf6615aa51fc59fe0[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Wed Jul 26 10:27:43 2017 +0800
+
+    modified
+
+[33mcommit 468f7c55f3efe498355ce368bb27e52fb2bc23da[m
+Merge: 2d55b4b 7a8e873
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Wed Jul 26 10:20:07 2017 +0800
+
+    modified v0.7
+
+[33mcommit 2d55b4b565011a0950ac3f2d25e74a20f7e30ac3[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Mon Jul 24 17:16:47 2017 +0800
+
+    test1
+
+[33mcommit 7a8e8734739c6c64d3da7fa204b3483344b0ea46[m[33m ([m[1;32mfeature1[m[33m)[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Mon Jul 24 17:14:03 2017 +0800
+
+    324
+
+[33mcommit 2999be4a2680c0d508b9074b838703a1a01bda28[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Mon Jul 24 16:12:28 2017 +0800
+
+    modify the readme
+
+[33mcommit bf672a62a3be89c0513151b5a903d61f293b5941[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Mon Jul 24 16:10:20 2017 +0800
+
+    the second version
+
+[33mcommit e4117090cad0fa3949bf160c7584ab2ddb4248a5[m
+Author: shenjiaqi <shenjiaqi@baidu.com>
+Date:   Wed Jul 19 15:14:20 2017 +0800
+
+    first commit
+
+[33mcommit 4ad69c2977b60170bf9f0d2af403da823a10f561[m
+Author: huansky <747814015@qq.com>
+Date:   Wed Jul 19 14:48:23 2017 +0800
+
+    Initial commit
