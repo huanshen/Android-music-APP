@@ -193,17 +193,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });*/
 
-        /*swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 refreshFruits();
             }
-        });*/
+        });
     }
 
-    /*private void refreshFruits() {
+    private void refreshFruits() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -224,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         }).start();
-    }*/
+    }
 
     /**
      * 设置各类点击事件
