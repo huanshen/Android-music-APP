@@ -34,6 +34,7 @@ public class MyService extends Service {
     private static ContentResolver contentResolver;
     private Cursor cursor = null;
     private int oncePlay = -1;
+    private MusicWidget mAppWidgetProvider = MusicWidget.getInstance();
 
     List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
 
