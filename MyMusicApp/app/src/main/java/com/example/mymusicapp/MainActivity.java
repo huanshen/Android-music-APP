@@ -19,6 +19,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
@@ -37,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnCreateContextMenuListener {
 
     private static final String ACTIVITY_TAG="LogDemo";
     public static final String UPDATE_ACTION = "com.example.mymusicapp.UPDATE_ACTION";
@@ -79,6 +80,32 @@ public class MainActivity extends AppCompatActivity {
             tv.setText(title);
             Toast.makeText(MainActivity.this, title, Toast.LENGTH_SHORT).show();
         }
+        // 若需要弹出菜单，这需要设置setOnCreateContextMenuListener
+        mListView.setOnCreateContextMenuListener(this);
+    }
+
+    @Override
+    // 播放  添加到播放列表  搜索
+    public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfoIn) {
+        menu.add(0, 1, 0, "sssss");
+        AdapterView.AdapterContextMenuInfo menuinfo2 = (AdapterView.AdapterContextMenuInfo) menuInfoIn;
+        String title = itemBeanList.get(menuinfo2.position).title;
+        menu.setHeaderTitle(title);
+        Toast.makeText(MainActivity.this, " 123 "+menuinfo2.position, Toast.LENGTH_SHORT).show();
+
+
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case 1:
+
+                Toast.makeText(MainActivity.this, " 123 "+item, Toast.LENGTH_SHORT).show();
+                return true;
+
+        }
+        return super.onContextItemSelected(item);
     }
 
     @Override
