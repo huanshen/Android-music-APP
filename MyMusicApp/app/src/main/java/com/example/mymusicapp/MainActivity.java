@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnCreateCont
     private List<Musiclist.MusicInfo> itemBeanList = new ArrayList<>();
     private Musiclist.MusicInfo musicInfo;
     private MyService.MusicBinder musicBinder;
+    private int menuIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,11 +88,21 @@ public class MainActivity extends AppCompatActivity implements View.OnCreateCont
     @Override
     // 播放  添加到播放列表  搜索
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfoIn) {
-        menu.add(0, 1, 0, "sssss");
+        menu.add(0, 1, 0, "播放");
+
         AdapterView.AdapterContextMenuInfo menuinfo2 = (AdapterView.AdapterContextMenuInfo) menuInfoIn;
-        String title = itemBeanList.get(menuinfo2.position).title;
+        menuIndex = menuinfo2.position;
+        if( status > 0 && (menuIndex == currIndex )){
+            menu.add(0, 2, 0, "暂停");
+            Toast.makeText(MainActivity.this, " 123 "+menuinfo2.position, Toast.LENGTH_SHORT).show();
+        }
+
+        //menu.add(0, 1, 0, "播放");
+
+
+        String title = itemBeanList.get(menuIndex).title;
         menu.setHeaderTitle(title);
-        Toast.makeText(MainActivity.this, " 123 "+menuinfo2.position, Toast.LENGTH_SHORT).show();
+
 
 
     }
@@ -100,9 +111,16 @@ public class MainActivity extends AppCompatActivity implements View.OnCreateCont
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case 1:
-
-                Toast.makeText(MainActivity.this, " 123 "+item, Toast.LENGTH_SHORT).show();
+                currIndex = menuIndex;
+                tv.setText(itemBeanList.get(currIndex).title);
+                start.setImageResource(R.drawable.playing);
+                musicBinder.startPlay(currIndex);
+                status = 1;
                 return true;
+            case 2:
+                status = -1;
+                start.setImageResource(R.drawable.pause);
+                musicBinder.stopPlay();
 
         }
         return super.onContextItemSelected(item);
